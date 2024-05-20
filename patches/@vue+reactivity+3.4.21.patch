@@ -1,0 +1,193 @@
+diff --git a/node_modules/@vue/reactivity/dist/reactivity.esm-bundler.js b/node_modules/@vue/reactivity/dist/reactivity.esm-bundler.js
+index 6c038f7..2bfd08e 100644
+--- a/node_modules/@vue/reactivity/dist/reactivity.esm-bundler.js
++++ b/node_modules/@vue/reactivity/dist/reactivity.esm-bundler.js
+@@ -1,5 +1,5 @@
+ /**
+-* @vue/reactivity v3.4.21
++* @vue/reactivity v3.4.27
+ * (c) 2018-present Yuxi (Evan) You and Vue contributors
+ * @license MIT
+ **/
+@@ -25,6 +25,7 @@ class EffectScope {
+      * @internal
+      */
+     this.cleanups = [];
++    this._isPaused = false;
+     this.parent = activeEffectScope;
+     if (!detached && activeEffectScope) {
+       this.index = (activeEffectScope.scopes || (activeEffectScope.scopes = [])).push(
+@@ -35,6 +36,36 @@ class EffectScope {
+   get active() {
+     return this._active;
+   }
++  pause() {
++    console.log("[EffectScope]: pause")
++    if (this._active) {
++      this._isPaused = true
++      if (this.scopes) {
++        for (let i = 0, l = this.scopes.length; i < l; i++) {
++          this.scopes[i].pause()
++        }
++      }
++      for (let i = 0, l = this.effects.length; i < l; i++) {
++        this.effects[i].pause()
++      }
++    }
++  }
++  resume() {
++    console.log("[EffectScope]: resume")
++    if (this._active) {
++      if (this._isPaused) {
++        this._isPaused = false
++        if (this.scopes) {
++          for (let i = 0, l = this.scopes.length; i < l; i++) {
++            this.scopes[i].resume()
++          }
++        }
++        for (let i = 0, l = this.effects.length; i < l; i++) {
++          this.effects[i].resume()
++        }
++      }
++    }
++  }
+   run(fn) {
+     if (this._active) {
+       const currentEffectScope = activeEffectScope;
+@@ -137,6 +168,8 @@ class ReactiveEffect {
+      * @internal
+      */
+     this._depsLength = 0;
++
++    this._isStopped = false;
+     recordEffectScope(this, scope);
+   }
+   get dirty() {
+@@ -162,9 +195,25 @@ class ReactiveEffect {
+   set dirty(v) {
+     this._dirtyLevel = v ? 4 : 0;
+   }
++  pause() {
++    console.log("[ReactiveEffect]: pause")
++    this.active = false
++  }
++  resume() {
++    console.log("[ReactiveEffect]: resume")
++    if (!this._isStopped) {
++      this.active = true
++      if (pausedQueueEffects.has(this)) {
++        pausedQueueEffects.delete(this)
++        queueEffectSchedulers.push(this.scheduler)
++        pauseScheduling()
++        resetScheduling()
++      }
++    }
++  }
+   run() {
+     this._dirtyLevel = 0;
+-    if (!this.active) {
++    if (!this.active || this._isStopped) {
+       return this.fn();
+     }
+     let lastShouldTrack = shouldTrack;
+@@ -183,12 +232,12 @@ class ReactiveEffect {
+     }
+   }
+   stop() {
+-    var _a;
+-    if (this.active) {
++    if (!this._isStopped) {
+       preCleanupEffect(this);
+       postCleanupEffect(this);
+-      (_a = this.onStop) == null ? void 0 : _a.call(this);
++      this.onStop && this.onStop();
+       this.active = false;
++      this._isStopped = true
+     }
+   }
+ }
+@@ -283,6 +332,8 @@ function trackEffect(effect2, dep, debuggerEventExtraInfo) {
+   }
+ }
+ const queueEffectSchedulers = [];
++const pausedQueueEffects = new WeakSet()
++
+ function triggerEffects(dep, dirtyLevel, debuggerEventExtraInfo) {
+   var _a;
+   pauseScheduling();
+@@ -300,7 +351,12 @@ function triggerEffects(dep, dirtyLevel, debuggerEventExtraInfo) {
+       if ((!effect2._runnings || effect2.allowRecurse) && effect2._dirtyLevel !== 2) {
+         effect2._shouldSchedule = false;
+         if (effect2.scheduler) {
+-          queueEffectSchedulers.push(effect2.scheduler);
++          // queueEffectSchedulers.push(effect2.scheduler);
++          if (!effect2.active) {
++            pausedQueueEffects.add(effect2)
++          } else {
++            queueEffectSchedulers.push(effect2.scheduler)
++          }
+         }
+       }
+     }
+@@ -404,8 +460,8 @@ function trigger(target, type, key, newValue, oldValue, oldTarget) {
+   resetScheduling();
+ }
+ function getDepFromReactive(object, key) {
+-  var _a;
+-  return (_a = targetMap.get(object)) == null ? void 0 : _a.get(key);
++  const depsMap = targetMap.get(object);
++  return depsMap && depsMap.get(key);
+ }
+ 
+ const isNonTrackableKeys = /* @__PURE__ */ makeMap(`__proto__,__v_isRef,__isVue`);
+@@ -442,6 +498,8 @@ function createArrayInstrumentations() {
+   return instrumentations;
+ }
+ function hasOwnProperty(key) {
++  if (!isSymbol(key))
++    key = String(key);
+   const obj = toRaw(this);
+   track(obj, "has", key);
+   return obj.hasOwnProperty(key);
+@@ -794,23 +852,16 @@ function createInstrumentations() {
+     clear: createReadonlyMethod("clear"),
+     forEach: createForEach(true, true)
+   };
+-  const iteratorMethods = ["keys", "values", "entries", Symbol.iterator];
++  const iteratorMethods = [
++    "keys",
++    "values",
++    "entries",
++    Symbol.iterator
++  ];
+   iteratorMethods.forEach((method) => {
+-    mutableInstrumentations2[method] = createIterableMethod(
+-      method,
+-      false,
+-      false
+-    );
+-    readonlyInstrumentations2[method] = createIterableMethod(
+-      method,
+-      true,
+-      false
+-    );
+-    shallowInstrumentations2[method] = createIterableMethod(
+-      method,
+-      false,
+-      true
+-    );
++    mutableInstrumentations2[method] = createIterableMethod(method, false, false);
++    readonlyInstrumentations2[method] = createIterableMethod(method, true, false);
++    shallowInstrumentations2[method] = createIterableMethod(method, false, true);
+     shallowReadonlyInstrumentations2[method] = createIterableMethod(
+       method,
+       true,
+@@ -967,7 +1018,7 @@ function isShallow(value) {
+   return !!(value && value["__v_isShallow"]);
+ }
+ function isProxy(value) {
+-  return isReactive(value) || isReadonly(value);
++  return value ? !!value["__v_raw"] : false;
+ }
+ function toRaw(observed) {
+   const raw = observed && observed["__v_raw"];
