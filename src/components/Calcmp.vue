@@ -2,6 +2,14 @@
 import { onMounted, onBeforeUnmount, getCurrentScope, watch, ref } from "vue";
 import { count } from "../store";
 import CalcmpChild from "./CalcmpChild.vue";
+import { longTask } from "../utils";
+
+const props = defineProps({
+    isOrigin: {
+        type: Boolean,
+        default: false,
+    },
+});
 
 const options = {
   rootMargin: "0px",
@@ -13,11 +21,7 @@ const localCount = ref(count.value)
 const scope = getCurrentScope() as any;
 
 watch(count, () => {
-    let start = performance.now();
-    for (let i = 0; i < 1000000000; i++) {
-        //
-    }
-    console.log(`耗时 ${performance.now() - start} ms`);
+    longTask();
 
     localCount.value = count.value;
 })
@@ -25,6 +29,7 @@ watch(count, () => {
 let observer: IntersectionObserver;
 
 onMounted(() => {
+    if (props.isOrigin) return;
     observer = new IntersectionObserver((events) => {
         const event = events[0];
         if (!event) return;

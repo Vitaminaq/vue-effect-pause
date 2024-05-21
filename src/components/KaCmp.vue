@@ -1,6 +1,14 @@
 <script lang="ts" setup>
 import { ref, watch, onMounted, onBeforeUnmount, getCurrentScope } from "vue";
 import { count } from "../store";
+import { longTask } from "../utils";
+
+const props = defineProps({
+    isOrigin: {
+        type: Boolean,
+        default: false,
+    },
+});
 
 const scope = getCurrentScope() as any;
 
@@ -12,17 +20,14 @@ const options = {
 const localCount = ref(count.value)
 
 watch(count, () => {
-    let start = performance.now();
-    for (let i = 0; i < 1000000000; i++) {
-        //
-    }
-    console.log(`耗时 ${performance.now() - start} ms`);
+    longTask(10);
 
     localCount.value = count.value;
 })
 let observer: IntersectionObserver;
 
 onMounted(() => {
+    if (props.isOrigin) return;
     observer = new IntersectionObserver((events) => {
         const event = events[0];
         if (!event) return;
