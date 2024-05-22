@@ -1,21 +1,7 @@
 <script lang="ts" setup>
-import { ref, watch, onMounted, onBeforeUnmount, getCurrentScope } from "vue";
+import { ref, watch } from "vue";
 import { count } from "../store";
 import { longTask } from "../utils";
-
-const props = defineProps({
-    isOrigin: {
-        type: Boolean,
-        default: false,
-    },
-});
-
-const scope = getCurrentScope() as any;
-
-const options = {
-  rootMargin: "0px",
-  threshold: 0,
-};
 
 const localCount = ref(count.value)
 
@@ -24,31 +10,6 @@ watch(count, () => {
 
     localCount.value = count.value;
 })
-let observer: IntersectionObserver;
-
-onMounted(() => {
-    if (props.isOrigin) return;
-    observer = new IntersectionObserver((events) => {
-        const event = events[0];
-        if (!event) return;
-        if (event.isIntersecting) {
-            console.log("进入视口");
-            scope.resume();
-        } else {
-            console.log("离开视口");
-            scope.pause();
-        }
-    }, options);
-
-    const dom = document.querySelector(".ka-cmp");
-
-    if (!dom) return;
-    observer.observe(dom);
-});
-
-onBeforeUnmount(() => {
-    observer.disconnect();
-});
 </script>
 <template>
     <div class="ka-cmp">KaCmp: {{ localCount }}</div>

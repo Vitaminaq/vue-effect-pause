@@ -7,7 +7,7 @@ import KaCmp from "./components/KaCmp.vue";
 import { count } from "./store";
 
 const currentTab = ref("normal");
-const originTab = ref("normal");
+// const originTab = ref("normal");
 
 const add = () => {
   count.value++;
@@ -48,11 +48,11 @@ const add = () => {
           kacmp
         </div>
       </div>
-      <Normal v-show="currentTab === 'normal'" />
-      <Calcmp v-show="currentTab === 'calcmp'" />
+      <Normal v-show-plus="currentTab === 'normal'" />
+      <Calcmp v-show-plus="currentTab === 'calcmp'" />
       <VifCmp v-if="currentTab === 'vifcmp'" />
       <KeepAlive>
-        <KaCmp v-if="currentTab === 'kacmp'" />
+        <KaCmp v-if="currentTab === 'kacmp'" v-snapshot />
       </KeepAlive>
     </div>
 <!-- 

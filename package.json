@@ -8,7 +8,8 @@
     "build": "vue-tsc && vite build",
     "preview": "vite preview",
     "postinstall": "patch-package",
-    "gen-patch": "npx patch-package @vue/reactivity"
+    "patch:reactivity": "npx patch-package @vue/reactivity",
+    "patch:runtime-dom": "npx patch-package @vue/runtime-dom"
   },
   "dependencies": {
     "vue": "3.4.21"
