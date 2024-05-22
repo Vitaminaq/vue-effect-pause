@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { ref, watch } from "vue";
+import { ref, watch, onUpdated } from "vue";
 import { count } from "../store";
 import { longTask } from "../utils";
 
@@ -10,6 +10,10 @@ watch(count, () => {
 
     localCount.value = count.value;
 })
+
+onUpdated(() => {
+    console.log('KaCmp updated');
+});
 </script>
 <template>
     <div class="ka-cmp">KaCmp: {{ localCount }}</div>
