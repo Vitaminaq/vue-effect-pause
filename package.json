@@ -9,7 +9,8 @@
     "preview": "vite preview",
     "postinstall": "patch-package",
     "patch:reactivity": "npx patch-package @vue/reactivity",
-    "patch:runtime-dom": "npx patch-package @vue/runtime-dom"
+    "patch:runtime-dom": "npx patch-package @vue/runtime-dom",
+    "patch:runtime-core": "npx patch-package @vue/runtime-core"
   },
   "dependencies": {
     "vue": "3.4.21"

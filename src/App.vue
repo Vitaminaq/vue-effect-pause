@@ -51,8 +51,8 @@ const add = () => {
       <Normal v-show-plus="currentTab === 'normal'" />
       <Calcmp v-show-plus="currentTab === 'calcmp'" />
       <VifCmp v-if="currentTab === 'vifcmp'" />
-      <KeepAlive>
-        <KaCmp v-if="currentTab === 'kacmp'" v-snapshot />
+      <KeepAlive freeze :delay="1">
+        <KaCmp v-if="currentTab === 'kacmp'" />
       </KeepAlive>
     </div>
 <!-- 

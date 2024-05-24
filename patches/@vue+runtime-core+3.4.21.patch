@@ -1,0 +1,46 @@
+diff --git a/node_modules/@vue/runtime-core/dist/runtime-core.esm-bundler.js b/node_modules/@vue/runtime-core/dist/runtime-core.esm-bundler.js
+index 554d6bd..d9c64e3 100644
+--- a/node_modules/@vue/runtime-core/dist/runtime-core.esm-bundler.js
++++ b/node_modules/@vue/runtime-core/dist/runtime-core.esm-bundler.js
+@@ -2593,7 +2593,9 @@ const KeepAliveImpl = {
+   props: {
+     include: [String, RegExp, Array],
+     exclude: [String, RegExp, Array],
+-    max: [String, Number]
++    max: [String, Number],
++    freeze: Boolean,
++    delay: [Boolean, Number],
+   },
+   setup(props, { slots }) {
+     const instance = getCurrentInstance();
+@@ -2622,6 +2624,18 @@ const KeepAliveImpl = {
+     const storageContainer = createElement("div");
+     sharedContext.activate = (vnode, container, anchor, namespace, optimized) => {
+       const instance2 = vnode.component;
++
++      const { freeze, delay } = props;
++      if (freeze) {
++        if (!delay) {
++          instance2.scope.resume();
++        } else {
++          setTimeout(() => {
++            instance2.scope.resume();
++          }, delay);
++        }
++      }
++      
+       move(vnode, container, anchor, 0, parentSuspense);
+       patch(
+         instance2.vnode,
+@@ -2650,6 +2664,11 @@ const KeepAliveImpl = {
+     };
+     sharedContext.deactivate = (vnode) => {
+       const instance2 = vnode.component;
++
++      if (props.freeze) {
++        instance2.scope.pause();
++      }
++
+       move(vnode, storageContainer, null, 1, parentSuspense);
+       queuePostRenderEffect(() => {
+         if (instance2.da) {
